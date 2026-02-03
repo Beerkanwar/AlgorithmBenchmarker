@@ -1,0 +1,20 @@
+﻿<Window x:Class="AlgorithmBenchmarker.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:AlgorithmBenchmarker.Views"
+        mc:Ignorable="d"
+        Title="Algorithm Benchmarker v2.0" Height="700" Width="1000"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid>
+        <TabControl Margin="5" x:Name="MainTabControl" Background="Transparent" BorderThickness="0">
+            <TabItem Header="Run Benchmark">
+                <views:BenchmarkView x:Name="BenchmarkViewControl"/>
+            </TabItem>
+            <TabItem Header="Results &amp; Charts">
+                <views:ResultsView x:Name="ResultsViewControl"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
