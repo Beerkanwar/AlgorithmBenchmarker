@@ -122,5 +122,16 @@ namespace AlgorithmBenchmarker.Data
             }
             return results;
         }
+
+        public void ClearAll()
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "DELETE FROM Results";
+                command.ExecuteNonQuery();
+            }
+        }
     }
 }

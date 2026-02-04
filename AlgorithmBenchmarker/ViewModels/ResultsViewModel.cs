@@ -60,9 +60,16 @@ namespace AlgorithmBenchmarker.ViewModels
             set => SetProperty(ref _memorySeries, value);
         }
         
-        public Axis[] XAxes { get; set; } = new Axis[] { new Axis { Name = "Input Size" } };
-        public Axis[] YAxesTime { get; set; } = new Axis[] { new Axis { Name = "Time (ms)" } };
-        public Axis[] YAxesMem { get; set; } = new Axis[] { new Axis { Name = "Memory (Bytes)" } };
+        public Axis[] XAxes { get; set; } = new Axis[] { new Axis { Name = "Input Size", LabelsPaint = new SolidColorPaint(SKColors.White) } };
+        public Axis[] YAxesTime { get; set; } = new Axis[] { new Axis { Name = "Time (ms)", LabelsPaint = new SolidColorPaint(SKColors.White) } };
+        public Axis[] YAxesMem { get; set; } = new Axis[] { new Axis { Name = "Memory (Bytes)", LabelsPaint = new SolidColorPaint(SKColors.White) } };
+
+        private SolidColorPaint _legendTextPaint = new SolidColorPaint { Color = SKColors.White };
+        public SolidColorPaint LegendTextPaint
+        {
+            get => _legendTextPaint;
+            set => SetProperty(ref _legendTextPaint, value);
+        }
 
 
         // Commands
@@ -73,6 +80,7 @@ namespace AlgorithmBenchmarker.ViewModels
         
         private void ClearResults()
         {
+            _repository.ClearAll();
             Results.Clear();
             TimeSeries = Array.Empty<ISeries>();
             MemorySeries = Array.Empty<ISeries>();
