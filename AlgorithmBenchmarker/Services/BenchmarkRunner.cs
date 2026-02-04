@@ -16,77 +16,109 @@ namespace AlgorithmBenchmarker.Services
             _inputGenerator = new InputGenerator();
         }
 
-        // Changed return type to List<BenchmarkResult> for range support
-        public List<BenchmarkResult> RunBatch(IAlgorithm algorithm, BenchmarkConfig config)
+        public List<BenchmarkResult> RunBatch(IAlgorithm algorithm, BenchmarkConfig config, CancellationToken token, IProgress<int> progress)
         {
             var results = new List<BenchmarkResult>();
             string batchId = Guid.NewGuid().ToString();
 
-            // Validate Range
             if (config.MinInputSize > config.MaxInputSize) 
                 throw new ArgumentException("Min Size cannot be greater than Max Size");
             if (config.StepSize <= 0) 
                 config.StepSize = 1;
 
+            int totalSteps = (config.MaxInputSize - config.MinInputSize) / config.StepSize + 1;
+            int currentStep = 0;
+
             for (int size = config.MinInputSize; size <= config.MaxInputSize; size += config.StepSize)
             {
-                // Temporarily override InputSize in a config clone or just pass size
-                // We'll trust GenerateInput uses 'size'
-                
-                // We need to modify the config or method to accept specific size
-                // InputGenerator takes 'config', so let's modify a temp config or overload GenerateInput.
-                // Cleaner: Pass 'size' explicitly to GenerateInput? 
-                // Currently InputGenerator.GenerateInput uses config.InputSize.
-                // Let's mutate config temporarily (thread safe only if single threaded).
-                // Or better: Create a focused config for this iteration.
-                
+                if (token.IsCancellationRequested) break;
+
+                // Create a config specific for this iteration
                 var iterationConfig = new BenchmarkConfig 
                 { 
                      InputSize = size,
                      InputType = config.InputType,
                      Distribution = config.Distribution,
-                     Repetitions = config.Repetitions
-                     // copy others if needed
+                     Repetitions = config.Repetitions,
+                     // Copy other props
+                     KeySize = config.KeySize,
+                     CipherMode = config.CipherMode,
+                     BlockSize = config.BlockSize,
+                     CompressionLevel = config.CompressionLevel,
+                     CompressionInputType = config.CompressionInputType,
+                     EnforceSortedInput = config.EnforceSortedInput,
+                     TargetPosition = config.TargetPosition,
+                     UseMemoization = config.UseMemoization,
+                     GraphDensity = config.GraphDensity,
+                     IsDirected = config.IsDirected,
+                     IsWeighted = config.IsWeighted,
+                     QueryCount = config.QueryCount,
+                     KeyDistribution = config.KeyDistribution,
+                     FeatureDimension = config.FeatureDimension,
+                     Epochs = config.Epochs,
+                     BatchSize = config.BatchSize,
+                     CostMetric = config.CostMetric
                 };
 
-                var result = RunSingle(algorithm, iterationConfig, batchId);
-                results.Add(result);
+                var result = RunSingle(algorithm, iterationConfig, batchId, token);
+                if (result != null) results.Add(result);
+
+                currentStep++;
+                progress?.Report((int)((double)currentStep / totalSteps * 100));
             }
 
             return results;
         }
 
-        private BenchmarkResult RunSingle(IAlgorithm algorithm, BenchmarkConfig config, string batchId)
+        private BenchmarkResult? RunSingle(IAlgorithm algorithm, BenchmarkConfig config, string batchId, CancellationToken token)
         {
-            var masterInput = _inputGenerator.GenerateInput(config, algorithm.Category); // Uses config.InputSize
+            var masterInput = _inputGenerator.GenerateInput(config, algorithm.Category);
 
-            // Warmup
-            object warmupInput = CloneInput(masterInput);
-            try { algorithm.Execute(warmupInput); } catch { /* ignore warmup errors */ }
+            // 1. Warmup
+            try 
+            {
+                object warmupInput = CloneInput(masterInput);
+                algorithm.Execute(warmupInput);
+                
+                // Force Clean
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            } 
+            catch { /* ignore warmup errors */ }
 
-            double totalTimeMs = 0;
-            long totalMemoryDelta = 0;
+            List<double> executionTimes = new List<double>();
+            long totalAllocated = 0;
 
             for (int i = 0; i < config.Repetitions; i++)
             {
+                if (token.IsCancellationRequested) return null;
+
                 object input = CloneInput(masterInput);
 
+                // Clear memory before run to minimize noise (though AllocatedBytesForCurrentThread is robust)
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
 
-                long memStart = GC.GetTotalMemory(true);
+                long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
                 Stopwatch sw = Stopwatch.StartNew();
 
                 algorithm.Execute(input);
 
                 sw.Stop();
-                long memEnd = GC.GetTotalMemory(false);
+                long afterBytes = GC.GetAllocatedBytesForCurrentThread();
 
-                totalTimeMs += sw.Elapsed.TotalMilliseconds;
-                long delta = Math.Max(0, memEnd - memStart);
-                totalMemoryDelta += delta;
+                executionTimes.Add(sw.Elapsed.TotalMilliseconds);
+                totalAllocated += (afterBytes - beforeBytes);
             }
+
+            if (executionTimes.Count == 0) return null;
+
+            double avgTime = executionTimes.Average();
+            double minTime = executionTimes.Min();
+            double maxTime = executionTimes.Max();
+            double stdDev = CalculateStdDev(executionTimes, avgTime);
 
             return new BenchmarkResult
             {
@@ -94,10 +126,22 @@ namespace AlgorithmBenchmarker.Services
                 AlgorithmName = algorithm.Name,
                 Category = algorithm.Category,
                 InputSize = config.InputSize,
-                AvgTimeMs = totalTimeMs / config.Repetitions,
-                MemoryBytes = totalMemoryDelta / config.Repetitions,
+                AvgTimeMs = avgTime,
+                MinTimeMs = minTime,
+                MaxTimeMs = maxTime,
+                StdDevTimeMs = stdDev,
+                AllocatedBytes = totalAllocated / config.Repetitions,
+                MemoryBytes = totalAllocated / config.Repetitions, // Mapping to old field too just in case
                 Timestamp = DateTime.Now
             };
+        }
+
+        private double CalculateStdDev(List<double> values, double avg)
+        {
+            if (values.Count <= 1) return 0;
+            double sumOfSquares = 0;
+            foreach(var val in values) sumOfSquares += Math.Pow(val - avg, 2);
+            return Math.Sqrt(sumOfSquares / (values.Count - 1));
         }
 
         private object CloneInput(object input)
@@ -105,12 +149,6 @@ namespace AlgorithmBenchmarker.Services
             if (input is int[] iArr) return (int[])iArr.Clone();
             if (input is float[] fArr) return (float[])fArr.Clone();
             if (input is string[] sArr) return (string[])sArr.Clone();
-            
-            // New cloning logic might be needed for new types (Matrix, Graph)
-            // GraphData we implemented earlier doesn't support deep clone yet.
-            // If BFS doesn't modify graph, we are fine. 
-            // BFS uses `bool[] visited` internal to the algo, doesn't touch graph. OK.
-            
             return input;
         }
     }

@@ -28,6 +28,7 @@ namespace AlgorithmBenchmarker.Algorithms.Graph
     {
         public string Name => "BFS Traversal";
         public string Category => "Graph";
+        public string Complexity => "O(V + E)";
 
         public void Execute(object input)
         {

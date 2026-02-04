@@ -13,6 +13,7 @@ namespace AlgorithmBenchmarker.Algorithms.Routing
     {
         public string Name => "Dijkstra Shortest Path";
         public string Category => "Routing";
+        public string Complexity => "O(E + V log V)";
 
         public void Execute(object input)
         {

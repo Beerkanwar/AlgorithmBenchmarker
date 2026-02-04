@@ -6,6 +6,7 @@ namespace AlgorithmBenchmarker.Algorithms.Searching
     {
         public string Name => "Binary Search";
         public string Category => "Searching";
+        public string Complexity => "O(log N)";
 
         public void Execute(object input)
         {

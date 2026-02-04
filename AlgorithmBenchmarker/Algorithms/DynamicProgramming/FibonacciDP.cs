@@ -6,6 +6,7 @@ namespace AlgorithmBenchmarker.Algorithms.DynamicProgramming
     {
         public string Name => "Fibonacci (DP)";
         public string Category => "Dynamic Programming";
+        public string Complexity => "O(N)";
 
         // For DP, the input size is 'n' itself (e.g., calculating 50th fib number).
         // Since the prompt asks for "Input Size: 100, 10000...", calculating Fib(10000) will overflow long easily.

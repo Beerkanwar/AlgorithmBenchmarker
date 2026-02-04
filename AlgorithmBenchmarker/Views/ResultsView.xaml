@@ -17,52 +17,63 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Batch:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="SemiBold"/>
+            <ComboBox ItemsSource="{Binding Batches}" 
+                      SelectedItem="{Binding SelectedBatch}" 
+                      MinWidth="120" MaxWidth="200"
+                      Margin="0,0,20,0"/>
+
             <Button Content="Refresh DB" Command="{Binding LoadResultsCommand}" Margin="0,0,10,0" Padding="15,8"/>
-            <Button Content="Reset Graph" Command="{Binding ClearResultsCommand}" Margin="0,0,10,0" Padding="15,8" Background="#C42B1C" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Reset Data" Command="{Binding ClearResultsCommand}" Margin="0,0,10,0" Padding="15,8" Background="#DC3545" Foreground="White" FontWeight="Bold"/>
             <Button Content="Export CSV" Command="{Binding ExportCsvCommand}" Margin="0,0,10,0" Padding="15,8"/>
             <Button Content="Export JSON" Command="{Binding ExportJsonCommand}" Margin="0,0,10,0" Padding="15,8"/>
         </StackPanel>
 
         <!-- Time Chart -->
-        <GroupBox Header="Execution Time Complexity (Ms vs Input Size)" Grid.Row="1" Margin="0,0,0,10">
+        <GroupBox Header="Execution Time (Ms vs Input Size)" Grid.Row="1" Margin="0,0,0,10">
             <lvc:CartesianChart Series="{Binding TimeSeries}" 
                                 XAxes="{Binding XAxes}" 
                                 YAxes="{Binding YAxesTime}"
                                 ZoomMode="Both"
                                 LegendPosition="Right"
                                 LegendTextPaint="{Binding LegendTextPaint}"
-                                TooltipPosition="Center"/>
+                                TooltipPosition="Center"
+                                Background="Transparent"/>
         </GroupBox>
 
         <!-- Memory Chart -->
-        <GroupBox Header="Memory Complexity (Bytes vs Input Size)" Grid.Row="2" Margin="0,0,0,10">
+        <GroupBox Header="Memory (Allocated Bytes vs Input Size)" Grid.Row="2" Margin="0,0,0,10">
             <lvc:CartesianChart Series="{Binding MemorySeries}" 
                                 XAxes="{Binding XAxes}" 
                                 YAxes="{Binding YAxesMem}"
                                 ZoomMode="Both"
                                 LegendPosition="Right"
                                 LegendTextPaint="{Binding LegendTextPaint}"
-                                TooltipPosition="Center"/>
+                                TooltipPosition="Center"
+                                Background="Transparent"/>
         </GroupBox>
 
         <!-- Data Grid (Expandable) -->
         <Expander Grid.Row="3" Header="Detailed Results Table" 
-                  Foreground="{StaticResource TextBrush}"
+                  Foreground="{DynamicResource TextBrush}"
                   HorizontalAlignment="Stretch" 
                   Margin="0,5">
-            <DataGrid ItemsSource="{Binding Results}" 
+            <DataGrid ItemsSource="{Binding FilteredResults}" 
                       AutoGenerateColumns="False" 
                       IsReadOnly="True"
                       Height="200"
                       Margin="0,5">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Batch" Binding="{Binding BatchId}"/>
-                    <DataGridTextColumn Header="Date" Binding="{Binding Timestamp}"/>
+                    <DataGridTextColumn Header="Date" Binding="{Binding Timestamp}" Width="140"/>
                     <DataGridTextColumn Header="Algorithm" Binding="{Binding AlgorithmName}"/>
                     <DataGridTextColumn Header="Category" Binding="{Binding Category}"/>
-                    <DataGridTextColumn Header="Input Size" Binding="{Binding InputSize}"/>
-                    <DataGridTextColumn Header="Time (ms)" Binding="{Binding AvgTimeMs, StringFormat=N4}"/>
-                    <DataGridTextColumn Header="Memory (Bytes)" Binding="{Binding MemoryBytes, StringFormat=N0}"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding InputSize}"/>
+                    <DataGridTextColumn Header="Avg Time (ms)" Binding="{Binding AvgTimeMs, StringFormat=N4}" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Min (ms)" Binding="{Binding MinTimeMs, StringFormat=N4}"/>
+                    <DataGridTextColumn Header="Max (ms)" Binding="{Binding MaxTimeMs, StringFormat=N4}"/>
+                    <DataGridTextColumn Header="StdDev" Binding="{Binding StdDevTimeMs, StringFormat=N4}"/>
+                    <DataGridTextColumn Header="Allocated (Bytes)" Binding="{Binding AllocatedBytes, StringFormat=N0}" FontWeight="Bold"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Expander>

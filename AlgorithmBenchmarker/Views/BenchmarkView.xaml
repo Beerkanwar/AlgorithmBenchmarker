@@ -4,122 +4,299 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:viewmodels="clr-namespace:AlgorithmBenchmarker.ViewModels"
+             xmlns:converters="clr-namespace:AlgorithmBenchmarker.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="900"
+             d:DesignHeight="800" d:DesignWidth="900"
              d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:BooleanInverseConverter x:Key="BooleanInverseConverter"/>
     </UserControl.Resources>
 
     <Grid Margin="30">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel MaxWidth="700" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel MaxWidth="800" HorizontalAlignment="Stretch" VerticalAlignment="Top">
                 <TextBlock Text="Benchmark Configuration" FontSize="28" FontWeight="Bold" Margin="0,0,0,25"/>
 
-                <!-- Algorithm Selection -->
-                <GroupBox Header="Algorithm Selection" Margin="0,0,0,20" Padding="15">
-                    <StackPanel Margin="5">
-                        <TextBlock Text="Category" Margin="0,0,0,8" FontWeight="SemiBold"/>
-                        <ComboBox ItemsSource="{Binding Categories}" 
-                                  SelectedItem="{Binding SelectedCategory}" 
-                                  IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"
-                                  Margin="0,0,0,20"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Algorithm" Margin="0,0,0,8" FontWeight="SemiBold"/>
-                        <ComboBox ItemsSource="{Binding Algorithms}" 
-                                  SelectedItem="{Binding SelectedAlgorithm}" 
-                                  DisplayMemberPath="Name"
-                                  IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"/>
-                    </StackPanel>
+                    <!-- Algorithm Selection -->
+                    <GroupBox Header="Algorithm Selection" Margin="0,0,10,20" Padding="15">
+                        <StackPanel Margin="5">
+                            <TextBlock Text="Category" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding Categories}" 
+                                      SelectedItem="{Binding SelectedCategory}" 
+                                      IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"
+                                      Margin="0,0,0,20"/>
+
+                            <TextBlock Text="Algorithm" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding Algorithms}" 
+                                      SelectedItem="{Binding SelectedAlgorithm}" 
+                                      DisplayMemberPath="Name"
+                                      IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"/>
+
+                            <TextBlock Text="{Binding SelectedAlgorithm.Complexity, StringFormat='Expected Complexity: {0}'}" 
+                                       Margin="0,15,0,0" Foreground="{DynamicResource AccentBrush}" FontWeight="Bold"
+                                       Visibility="{Binding SelectedAlgorithm, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Common Configuration -->
+                    <GroupBox Grid.Column="1" Header="Common Settings" Margin="10,0,0,20" Padding="15">
+                        <StackPanel Margin="5">
+                             <TextBlock Text="Input Size Range" FontWeight="Bold" Margin="0,0,0,8"/>
+                             <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                    <TextBlock Text="Min" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Config.MinInputSize}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="5,0,5,0">
+                                    <TextBlock Text="Max" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Config.MaxInputSize}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                    <TextBlock Text="Step" FontSize="11" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Config.StepSize}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Input Type" Margin="0,0,0,5" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding InputTypes}" 
+                                      SelectedItem="{Binding Config.InputType}"
+                                      Margin="0,0,0,15"/>
+
+                            <TextBlock Text="Repetitions" Margin="0,0,0,5" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding Config.Repetitions}"/>
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+
+                <!-- Dynamic Advanced Settings -->
+                <GroupBox Header="Category Specific Settings" Margin="0,0,0,25" Padding="15">
+                     <StackPanel>
+                        <!-- Sorting / Searching / Indexing Common (Distribution) -->
+                         <StackPanel Margin="0,0,0,10">
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Sorting">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Searching">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Indexing">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <TextBlock Text="Input Distribution" Margin="0,0,0,5"/>
+                             <ComboBox ItemsSource="{Binding DistributionTypes}" 
+                                       SelectedItem="{Binding Config.Distribution}"/>
+                         </StackPanel>
+
+                         <!-- Encryption -->
+                         <StackPanel>
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Encryption">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <Grid>
+                                 <Grid.ColumnDefinitions>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                 </Grid.ColumnDefinitions>
+                                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                     <TextBlock Text="Key Size (bits)" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.KeySize}"/>
+                                 </StackPanel>
+                                 <StackPanel Grid.Column="1" Margin="5,0,5,0">
+                                     <TextBlock Text="Cipher Mode" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.CipherMode}"/>
+                                 </StackPanel>
+                                 <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                     <TextBlock Text="Block Size" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.BlockSize}"/>
+                                 </StackPanel>
+                             </Grid>
+                         </StackPanel>
+
+                         <!-- Compression -->
+                         <StackPanel>
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Compression">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <Grid>
+                                 <Grid.ColumnDefinitions>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                 </Grid.ColumnDefinitions>
+                                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                     <TextBlock Text="Compression Level" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.CompressionLevel}"/>
+                                 </StackPanel>
+                                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                      <TextBlock Text="Input Type (Text/Binary)" Margin="0,0,0,5"/>
+                                      <TextBox Text="{Binding Config.CompressionInputType}"/>
+                                 </StackPanel>
+                             </Grid>
+                         </StackPanel>
+
+                        <!-- Dynamic Programming -->
+                        <StackPanel>
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Dynamic Programming">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <CheckBox Content="Use Memoization" IsChecked="{Binding Config.UseMemoization}" Margin="0,5"/>
+                        </StackPanel>
+
+                        <!-- Graph -->
+                        <StackPanel>
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Graph">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Routing">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <Grid>
+                                 <Grid.ColumnDefinitions>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                 </Grid.ColumnDefinitions>
+                                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                     <TextBlock Text="Graph Density" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.GraphDensity}"/>
+                                 </StackPanel>
+                                 <CheckBox Grid.Column="1" Content="Directed" IsChecked="{Binding Config.IsDirected}" VerticalAlignment="Bottom" Margin="5,0,5,5"/>
+                                 <CheckBox Grid.Column="2" Content="Weighted" IsChecked="{Binding Config.IsWeighted}" VerticalAlignment="Bottom" Margin="5,0,0,5"/>
+                             </Grid>
+                        </StackPanel>
+
+                        <!-- Machine Learning -->
+                        <StackPanel>
+                             <StackPanel.Style>
+                                 <Style TargetType="StackPanel">
+                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="Machine Learning">
+                                             <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                         <DataTrigger Binding="{Binding SelectedCategory}" Value="ML Optimization">
+                                              <Setter Property="Visibility" Value="Visible"/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </StackPanel.Style>
+                             <Grid>
+                                 <Grid.ColumnDefinitions>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                     <ColumnDefinition Width="*"/>
+                                 </Grid.ColumnDefinitions>
+                                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                     <TextBlock Text="Features" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.FeatureDimension}"/>
+                                 </StackPanel>
+                                 <StackPanel Grid.Column="1" Margin="5,0,5,0">
+                                     <TextBlock Text="Epochs" Margin="0,0,0,5"/>
+                                     <TextBox Text="{Binding Config.Epochs}"/>
+                                 </StackPanel>
+                                 <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                      <TextBlock Text="Batch Size" Margin="0,0,0,5"/>
+                                      <TextBox Text="{Binding Config.BatchSize}"/>
+                                 </StackPanel>
+                             </Grid>
+                        </StackPanel>
+                     </StackPanel>
                 </GroupBox>
 
-                <!-- Configuration -->
-                <GroupBox Header="Settings" Margin="0,0,0,25" Padding="15">
-                    <StackPanel Margin="5">
-                        <TextBlock Text="Input Size Range" FontWeight="Bold" Margin="0,0,0,12"/>
-                        
-                        <Grid Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Text="Min Size" Margin="0,0,0,5"/>
-                                <TextBox Text="{Binding Config.MinInputSize}"/>
-                            </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,10,0,0">
+                    <ProgressBar Value="{Binding ProgressValue}" Maximum="100" Height="20" Margin="0,0,0,15"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                            <StackPanel Grid.Column="1" Margin="10,0,10,0">
-                                <TextBlock Text="Max Size" Margin="0,0,0,5"/>
-                                <TextBox Text="{Binding Config.MaxInputSize}"/>
-                            </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                             <ColumnDefinition Width="*"/>
+                             <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                <TextBlock Text="Step Size" Margin="0,0,0,5"/>
-                                <TextBox Text="{Binding Config.StepSize}"/>
-                            </StackPanel>
-                        </Grid>
+                        <!-- Status Message -->
+                        <TextBlock Text="{Binding StatusMessage}" 
+                                   Foreground="{DynamicResource AccentBrush}" 
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,10,0"/>
 
-                        <TextBlock Text="Input Data Type" Margin="0,0,0,8"/>
-                        <ComboBox ItemsSource="{Binding InputTypes}" 
-                                  SelectedItem="{Binding Config.InputType}"
-                                  Margin="0,0,0,20"/>
+                        <StackPanel Orientation="Horizontal" Grid.Column="1">
+                            <!-- Cancel Button -->
+                             <Button Content="CANCEL" 
+                                    Command="{Binding CancelBenchmarkCommand}" 
+                                    Background="#DC3545"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Margin="0,0,10,0"/>
 
-                        <TextBlock Text="Input Distribution" Margin="0,0,0,8"/>
-                        <ComboBox ItemsSource="{Binding DistributionTypes}" 
-                                  SelectedItem="{Binding Config.Distribution}"
-                                  Margin="0,0,0,20"/>
+                            <!-- Run Button -->
+                            <Button Content="RUN BENCHMARK" 
+                                    Command="{Binding RunBenchmarkCommand}" 
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"/>
 
-                        <TextBlock Text="Repetitions (Average)" Margin="0,0,0,8"/>
-                        <TextBox Text="{Binding Config.Repetitions}"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <!-- Status Message -->
-                    <TextBlock Text="{Binding StatusMessage}" 
-                               Foreground="{StaticResource AccentBrush}" 
-                               VerticalAlignment="Center"
-                               Margin="0,0,20,0"
-                               TextWrapping="Wrap"
-                               MaxWidth="300"
-                               TextAlignment="Right"/>
-
-                    <!-- Run Button -->
-                    <Button Content="RUN BENCHMARK" 
-                            Command="{Binding RunBenchmarkCommand}" 
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"/>
-
-                    <!-- Result Button (Pulsing) -->
-                    <Button Content="VIEW RESULTS" 
-                            Command="{Binding ViewResultsCommand}" 
-                            Margin="15,0,0,0"
-                            Background="#28A745"
-                            Visibility="{Binding IsResultReady, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsResultReady}" Value="True">
-                                        <DataTrigger.EnterActions>
-                                            <BeginStoryboard x:Name="PulseStoryboard">
-                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                     From="1.0" To="0.6" Duration="0:0:0.8"/>
-                                                    <ThicknessAnimation Storyboard.TargetProperty="Margin"
-                                                                        From="15,0,0,0" To="15,-2,0,2" Duration="0:0:0.8"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </DataTrigger.EnterActions>
-                                        <DataTrigger.ExitActions>
-                                            <StopStoryboard BeginStoryboardName="PulseStoryboard"/>
-                                        </DataTrigger.ExitActions>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                            <!-- Result Button (Pulsing) -->
+                            <Button Content="VIEW RESULTS" 
+                                    Command="{Binding ViewResultsCommand}" 
+                                    Margin="15,0,0,0"
+                                    Background="#28A745"
+                                    Visibility="{Binding IsResultReady, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Button.Resources>
+                                         <Style TargetType="Border">
+                                             <Setter Property="CornerRadius" Value="6"/>
+                                         </Style>
+                                    </Button.Resources>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

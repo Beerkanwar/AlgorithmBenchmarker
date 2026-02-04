@@ -4,6 +4,7 @@ namespace AlgorithmBenchmarker.Algorithms
     {
         string Name { get; }
         string Category { get; }
+        string Complexity { get; }
         void Execute(object input);
     }
 }

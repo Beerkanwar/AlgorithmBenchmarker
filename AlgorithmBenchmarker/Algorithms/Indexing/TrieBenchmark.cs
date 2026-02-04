@@ -13,6 +13,7 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
     {
         public string Name => "Trie Insert/Search";
         public string Category => "Indexing";
+        public string Complexity => "O(L)";
 
         public void Execute(object input)
         {

@@ -12,21 +12,39 @@ namespace AlgorithmBenchmarker.Services
 
         public object GenerateInput(BenchmarkConfig config, string algorithmCategory)
         {
-            // Special handling for Graph and DP
             if (algorithmCategory == "Graph" || algorithmCategory == "Routing")
             {
-                return GenerateGraph(config.InputSize);
+                return GenerateGraph(config);
             }
             if (algorithmCategory == "Dynamic Programming" || algorithmCategory == "ML Optimization")
             {
-                // For DP/ML, we treat InputSize as N (dimension or count)
-                // ML needs N to create matrices internally or we can create them here.
-                // Keeping it simple: Pass N.
                 return config.InputSize;
             }
-            // For others like Encryption/Compression/Indexing, we default to Arrays of standard types
-            // defined in config.InputType (e.g. String array for Trie/Compression).
-
+            
+            // Compression / Encryption specific logic
+            if (algorithmCategory == "Compression" || algorithmCategory == "Encryption")
+            {
+                // If specific CompressionInputType is set (Binary), return bytes
+                if (config.CompressionInputType == "Binary" || algorithmCategory == "Encryption")
+                {
+                    // Encryption almost always works on bytes
+                    return GenerateByteArray(config.InputSize);
+                }
+                // Else Text, fall through to String generation (or generate long string)
+                if (config.CompressionInputType == "Text")
+                {
+                    // For compression, a single long string is better than an array of strings?
+                    // Typically compression algorithms take byte[] or stream.
+                    // Let's return byte[] for consistency in benchmarking, but derived from text if "Text"
+                    return GenerateTextBytes(config.InputSize);
+                }
+            }
+            
+            // Indexing (Trie) needs Strings
+            if (algorithmCategory == "Indexing")
+            {
+                return GenerateStringArray(config.InputSize, DistributionType.Random); // Indexing usually random keys
+            }
 
             // Default: generate arrays for Sorting/Searching
             switch (config.InputType)
@@ -38,15 +56,33 @@ namespace AlgorithmBenchmarker.Services
                 case InputType.String:
                     return GenerateStringArray(config.InputSize, config.Distribution);
                 default:
-                    throw new ArgumentException("Unknown Input Type");
+                    return GenerateIntArray(config.InputSize, config.Distribution);
             }
+        }
+
+        private byte[] GenerateByteArray(int size)
+        {
+            var bytes = new byte[size];
+            _random.NextBytes(bytes);
+            return bytes;
+        }
+
+        private byte[] GenerateTextBytes(int size)
+        {
+            // Generate random text chars
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
+            var stringChars = new char[size];
+            for (int i = 0; i < size; i++)
+            {
+                stringChars[i] = chars[_random.Next(chars.Length)];
+            }
+            return System.Text.Encoding.UTF8.GetBytes(new string(stringChars));
         }
 
         private int[] GenerateIntArray(int size, DistributionType distribution)
         {
             var array = new int[size];
             for (int i = 0; i < size; i++) array[i] = _random.Next(0, 100000); // Random values
-
             ApplyDistribution(array, distribution);
             return array;
         }
@@ -55,7 +91,6 @@ namespace AlgorithmBenchmarker.Services
         {
             var array = new float[size];
             for (int i = 0; i < size; i++) array[i] = (float)_random.NextDouble() * 100000f;
-
             ApplyDistribution(array, distribution);
             return array;
         }
@@ -64,7 +99,6 @@ namespace AlgorithmBenchmarker.Services
         {
             var array = new string[size];
             for (int i = 0; i < size; i++) array[i] = Guid.NewGuid().ToString().Substring(0, 8);
-
             ApplyDistribution(array, distribution);
             return array;
         }
@@ -83,7 +117,6 @@ namespace AlgorithmBenchmarker.Services
             else if (distribution == DistributionType.NearlySorted)
             {
                 Array.Sort(array);
-                // Swap a few elements to make it "nearly" sorted
                 int swaps = Math.Max(1, array.Length / 100); 
                 for (int k = 0; k < swaps; k++)
                 {
@@ -92,24 +125,42 @@ namespace AlgorithmBenchmarker.Services
                     (array[i], array[j]) = (array[j], array[i]);
                 }
             }
-            // Random is default, do nothing
         }
 
-        private GraphData GenerateGraph(int vertices)
+        private GraphData GenerateGraph(BenchmarkConfig config)
         {
+            int vertices = config.InputSize;
             var graph = new GraphData(vertices);
-            // Create a random connected graph (roughly)
-            // Or just random edges.
-            // Let's add vertices * 2 edges
-            int edges = vertices * 2;
-            for (int i = 0; i < edges; i++)
+            
+            // Density 0.0 - 1.0. Max edges = V * (V-1) (Directed) or V*(V-1)/2 (Undirected)
+            // Use config.GraphDensity (double) if available, parsing from string?
+            // Config.GraphDensity is string "Low", "Medium", "High"? No, Config definition says string?
+            // Looking at BenchmarkConfig.cs in Step 16, it was:
+            // public string GraphDensity { get; set; } = "Medium";
+            
+            double density = 0.1; // Low
+            if (config.GraphDensity == "Medium") density = 0.3;
+            if (config.GraphDensity == "High") density = 0.6;
+            
+            int maxEdges = vertices * (vertices - 1); // Directed max
+            if (!config.IsDirected) maxEdges /= 2;
+            
+            int edgeCount = (int)(maxEdges * density);
+            // Cap edge count to avoid freezing on huge graphs
+            edgeCount = Math.Min(edgeCount, vertices * 20); 
+
+            for (int i = 0; i < edgeCount; i++)
             {
                 int u = _random.Next(0, vertices);
                 int v = _random.Next(0, vertices);
                 if (u != v)
                 {
-                    graph.AddEdge(u, v);
-                    // Undirected? BFS usually on directed or undirected. Let's do directed for simplicity as per implementation.
+                    // If weighted, add weight? 
+                    // GraphData.AddEdge signature needed.
+                    // Assuming GraphData supports IsDirected logic or we handle it here.
+                    graph.AddEdge(u, v); 
+                    // If undirected, AddEdge might handle adding v->u, or we call it explicitly?
+                    // Usually GraphData handles it.
                 }
             }
             return graph;

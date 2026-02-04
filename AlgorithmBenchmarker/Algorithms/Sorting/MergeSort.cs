@@ -8,6 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.Sorting
     {
         public string Name => "Merge Sort";
         public string Category => "Sorting";
+        public string Complexity => "O(N log N)";
 
         public void Execute(object input)
         {

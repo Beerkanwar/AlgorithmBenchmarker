@@ -8,6 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.Compression
     {
         public string Name => "GZip Compression";
         public string Category => "Compression";
+        public string Complexity => "O(N)";
 
         public void Execute(object input)
         {

@@ -11,26 +11,26 @@ namespace AlgorithmBenchmarker
         private bool _isDarkTheme = true;
         private readonly ResultsViewModel _resultsVM;
 
-        public MainWindow()
+        public MainWindow(MainViewModel mainVM, ResultsViewModel resultsVM)
         {
             InitializeComponent();
 
-            // Wire up ViewModels
-            _resultsVM = new ResultsViewModel();
-            var mainVM = new MainViewModel(_resultsVM);
+            // DI Injected
+            _resultsVM = resultsVM;
+            var _mainVM = mainVM;
+
+            // Wire up
+            BenchmarkViewControl.DataContext = _mainVM;
+            ResultsViewControl.DataContext = _resultsVM;
 
             // Listen for Tab Switching
-            mainVM.RequestResultsView += () =>
+            _mainVM.RequestResultsView += () =>
             {
-                // Must run on UI thread
                 Dispatcher.Invoke(() => 
                 {
                     MainTabControl.SelectedIndex = 1; // Index 1 is Results
                 });
             };
-
-            BenchmarkViewControl.DataContext = mainVM;
-            ResultsViewControl.DataContext = _resultsVM;
         }
 
         private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)

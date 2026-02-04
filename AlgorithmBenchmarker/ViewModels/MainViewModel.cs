@@ -20,15 +20,17 @@ namespace AlgorithmBenchmarker.ViewModels
         private readonly SQLiteRepository _repository;
         private readonly ResultsViewModel _resultsViewModel;
         
+        private CancellationTokenSource? _cts;
+        
         // Action to request tab switch
         public Action? RequestResultsView { get; set; }
 
-        public MainViewModel(ResultsViewModel resultsVM)
+        public MainViewModel(ResultsViewModel resultsVM, AlgorithmRegistry registry, BenchmarkRunner runner, SQLiteRepository repository)
         {
             _resultsViewModel = resultsVM;
-            _registry = new AlgorithmRegistry();
-            _runner = new BenchmarkRunner();
-            _repository = new SQLiteRepository();
+            _registry = registry;
+            _runner = runner;
+            _repository = repository;
 
             Categories = new ObservableCollection<string>(_registry.GetCategories());
             Config = new BenchmarkConfig();
@@ -44,7 +46,8 @@ namespace AlgorithmBenchmarker.ViewModels
 
             UpdateAlgorithms();
             
-            RunBenchmarkCommand = new AsyncRelayCommand(RunBenchmarkAsync);
+            RunBenchmarkCommand = new AsyncRelayCommand(RunBenchmarkAsync, () => !IsBusy);
+            CancelBenchmarkCommand = new RelayCommand(CancelBenchmark, () => IsBusy);
             ViewResultsCommand = new RelayCommand(ExecuteViewResults);
         }
 
@@ -93,7 +96,21 @@ namespace AlgorithmBenchmarker.ViewModels
         public bool IsBusy
         {
             get => _isBusy;
-            set => SetProperty(ref _isBusy, value);
+            set
+            {
+                if (SetProperty(ref _isBusy, value))
+                {
+                    (RunBenchmarkCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
+                    (CancelBenchmarkCommand as RelayCommand)?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        private int _progressValue;
+        public int ProgressValue
+        {
+            get => _progressValue;
+            set => SetProperty(ref _progressValue, value);
         }
 
         private bool _isResultReady;
@@ -103,7 +120,7 @@ namespace AlgorithmBenchmarker.ViewModels
             set => SetProperty(ref _isResultReady, value);
         }
 
-        private string _statusMessage = "Ready";
+        private string _statusMessage;
         public string StatusMessage
         {
             get => _statusMessage;
@@ -116,6 +133,7 @@ namespace AlgorithmBenchmarker.ViewModels
 
         // Commands
         public ICommand RunBenchmarkCommand { get; }
+        public ICommand CancelBenchmarkCommand { get; }
         public ICommand ViewResultsCommand { get; }
 
         private void ExecuteViewResults()
@@ -142,7 +160,6 @@ namespace AlgorithmBenchmarker.ViewModels
             }
 
             // Example dynamic logic:
-            // If algorithm is "Binary Search" (requires sorted input), force Sorted distribution
             if (SelectedAlgorithm != null)
             {
                 if (SelectedAlgorithm.Category == "Searching" && SelectedAlgorithm.Name.Contains("Binary"))
@@ -153,7 +170,6 @@ namespace AlgorithmBenchmarker.ViewModels
                 }
                 else if (SelectedAlgorithm.Category == "Sorting")
                 {
-                    // Sorting algorithms are interesting to test on all distributions
                     if (!DistributionTypes.Contains(DistributionType.ReverseSorted))
                     {
                          DistributionTypes.Add(DistributionType.ReverseSorted);
@@ -161,6 +177,11 @@ namespace AlgorithmBenchmarker.ViewModels
                     }
                 }
             }
+        }
+
+        private void CancelBenchmark()
+        {
+            _cts?.Cancel();
         }
 
         private async Task RunBenchmarkAsync()
@@ -173,23 +194,32 @@ namespace AlgorithmBenchmarker.ViewModels
 
             IsBusy = true;
             IsResultReady = false;
+            ProgressValue = 0;
             StatusMessage = $"Running {SelectedAlgorithm.Name} (Range {Config.MinInputSize} - {Config.MaxInputSize})...";
+            
+            _cts = new CancellationTokenSource();
+            var progress = new Progress<int>(p => ProgressValue = p);
 
             try
             {
                 // Run Batch
-                var results = await Task.Run(() => _runner.RunBatch(SelectedAlgorithm, Config));
+                var results = await Task.Run(() => _runner.RunBatch(SelectedAlgorithm, Config, _cts.Token, progress));
 
-                // Save All
-                foreach (var r in results) _repository.SaveResult(r);
-                
-                StatusMessage = "Benchmark Complete! Click below to view results.";
+                if (_cts.Token.IsCancellationRequested)
+                {
+                    StatusMessage = "Benchmark Cancelled.";
+                }
+                else
+                {
+                    // Save All
+                    foreach (var r in results) _repository.SaveResult(r);
+                    
+                    StatusMessage = "Benchmark Complete! Click below to view results.";
+                    IsResultReady = true;
 
-                // Refresh Results
-                _resultsViewModel.LoadResults();
-                
-                // Don't auto-switch, enable the button
-                IsResultReady = true;
+                    // Refresh Results
+                    _resultsViewModel.LoadResults();
+                }
             }
             catch (Exception ex)
             {
@@ -199,6 +229,8 @@ namespace AlgorithmBenchmarker.ViewModels
             finally
             {
                 IsBusy = false;
+                _cts.Dispose();
+                _cts = null;
             }
         }
     }

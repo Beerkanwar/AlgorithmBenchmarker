@@ -8,6 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.Encryption
     {
         public string Name => "AES Encryption";
         public string Category => "Encryption";
+        public string Complexity => "O(N)";
 
         public void Execute(object input)
         {
