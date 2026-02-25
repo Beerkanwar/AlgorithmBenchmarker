@@ -12,6 +12,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using Microsoft.Win32;
 using System.Collections.Generic;
+using System;
 
 namespace AlgorithmBenchmarker.ViewModels
 {
@@ -26,7 +27,7 @@ namespace AlgorithmBenchmarker.ViewModels
             _exportService = new ExportService();
             _results = new ObservableCollection<BenchmarkResult>();
             _filteredResults = new ObservableCollection<BenchmarkResult>();
-            _batches = new ObservableCollection<string>();
+            _batchItems = new ObservableCollection<BatchItem>();
             _timeSeries = Array.Empty<ISeries>();
             _memorySeries = Array.Empty<ISeries>();
             
@@ -54,24 +55,11 @@ namespace AlgorithmBenchmarker.ViewModels
             set => SetProperty(ref _filteredResults, value);
         }
 
-        private ObservableCollection<string> _batches;
-        public ObservableCollection<string> Batches
+        private ObservableCollection<BatchItem> _batchItems;
+        public ObservableCollection<BatchItem> BatchItems
         {
-            get => _batches;
-            set => SetProperty(ref _batches, value);
-        }
-
-        private string _selectedBatch = "All";
-        public string SelectedBatch
-        {
-            get => _selectedBatch;
-            set
-            {
-                if (SetProperty(ref _selectedBatch, value))
-                {
-                    ApplyFilter();
-                }
-            }
+            get => _batchItems;
+            set => SetProperty(ref _batchItems, value);
         }
 
         // Charts
@@ -112,8 +100,7 @@ namespace AlgorithmBenchmarker.ViewModels
             _repository.ClearAll();
             Results.Clear();
             FilteredResults.Clear();
-            Batches.Clear();
-            Batches.Add("All");
+            BatchItems.Clear();
             TimeSeries = Array.Empty<ISeries>();
             MemorySeries = Array.Empty<ISeries>();
         }
@@ -123,25 +110,56 @@ namespace AlgorithmBenchmarker.ViewModels
             var data = _repository.GetAllResults();
             Results = new ObservableCollection<BenchmarkResult>(data);
             
-            // Update Batches
-            var uniqueBatches = Results.Select(r => r.BatchId).Distinct().Where(b => !string.IsNullOrEmpty(b)).ToList();
-            Batches = new ObservableCollection<string>(uniqueBatches);
-            Batches.Insert(0, "All");
-            SelectedBatch = "All"; // Reset filter
+            // Update BatchItems - Create selectable items for each algorithm batch
+            var uniqueBatches = Results
+                .GroupBy(r => r.BatchId)
+                .Select(g => new BatchItem 
+                { 
+                    BatchId = g.Key, 
+                    AlgorithmName = g.First().AlgorithmName,
+                    IsSelected = false
+                })
+                .Where(b => !string.IsNullOrEmpty(b.BatchId))
+                .OrderBy(b => b.AlgorithmName)
+                .ToList();
+            
+            BatchItems = new ObservableCollection<BatchItem>(uniqueBatches);
+            
+            // Subscribe to changes in selection
+            foreach (var item in BatchItems)
+            {
+                item.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(BatchItem.IsSelected))
+                    {
+                        ApplyFilter();
+                    }
+                };
+            }
             
             ApplyFilter();
         }
 
         private void ApplyFilter()
         {
-            if (SelectedBatch == "All" || string.IsNullOrEmpty(SelectedBatch))
+            // Get selected batch IDs
+            var selectedBatchIds = BatchItems
+                .Where(b => b.IsSelected)
+                .Select(b => b.BatchId)
+                .ToList();
+            
+            if (selectedBatchIds.Count == 0)
             {
-                FilteredResults = new ObservableCollection<BenchmarkResult>(Results);
+                // No selection - show nothing
+                FilteredResults = new ObservableCollection<BenchmarkResult>();
             }
             else
             {
-                FilteredResults = new ObservableCollection<BenchmarkResult>(Results.Where(r => r.BatchId == SelectedBatch));
+                // Show results from selected batches
+                FilteredResults = new ObservableCollection<BenchmarkResult>(
+                    Results.Where(r => selectedBatchIds.Contains(r.BatchId)));
             }
+            
             UpdateCharts();
         }
 
@@ -160,7 +178,6 @@ namespace AlgorithmBenchmarker.ViewModels
             {
                 var runData = batch.OrderBy(r => r.InputSize).ToList();
                 var seriesName = $"{runData.First().AlgorithmName}";
-                if (SelectedBatch == "All") seriesName += $" ({batch.Key.Substring(0, Math.Min(8, batch.Key.Length))}...)";
 
                 timeSeriesList.Add(new LineSeries<BenchmarkResult>
                 {
