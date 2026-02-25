@@ -16,12 +16,10 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
                 // Just scan array
                 foreach (var query in data.SearchQueries)
                 {
-                    bool found = false;
                     for(int i=0; i<data.Dataset.Length; i++)
                     {
                         if (data.Dataset[i] == query)
                         {
-                            found = true;
                             break;
                         }
                     }

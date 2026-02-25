@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Linq;
 using AlgorithmBenchmarker.Algorithms;
 using AlgorithmBenchmarker.Models;
+using AlgorithmBenchmarker.Services.Instrumentation;
+using AlgorithmBenchmarker.Services.Profiling;
 
 namespace AlgorithmBenchmarker.Services
 {
@@ -33,32 +36,9 @@ namespace AlgorithmBenchmarker.Services
             {
                 if (token.IsCancellationRequested) break;
 
-                // Create a config specific for this iteration
-                var iterationConfig = new BenchmarkConfig 
-                { 
-                     InputSize = size,
-                     InputType = config.InputType,
-                     Distribution = config.Distribution,
-                     Repetitions = config.Repetitions,
-                     // Copy other props
-                     KeySize = config.KeySize,
-                     CipherMode = config.CipherMode,
-                     BlockSize = config.BlockSize,
-                     CompressionLevel = config.CompressionLevel,
-                     CompressionInputType = config.CompressionInputType,
-                     EnforceSortedInput = config.EnforceSortedInput,
-                     TargetPosition = config.TargetPosition,
-                     UseMemoization = config.UseMemoization,
-                     GraphDensity = config.GraphDensity,
-                     IsDirected = config.IsDirected,
-                     IsWeighted = config.IsWeighted,
-                     QueryCount = config.QueryCount,
-                     KeyDistribution = config.KeyDistribution,
-                     FeatureDimension = config.FeatureDimension,
-                     Epochs = config.Epochs,
-                     BatchSize = config.BatchSize,
-                     CostMetric = config.CostMetric
-                };
+                // Create a config specific for this iteration using Clone()
+                var iterationConfig = config.Clone();
+                iterationConfig.InputSize = size;
 
                 var result = RunSingle(algorithm, iterationConfig, batchId, token);
                 if (result != null) results.Add(result);
@@ -67,12 +47,84 @@ namespace AlgorithmBenchmarker.Services
                 progress?.Report((int)((double)currentStep / totalSteps * 100));
             }
 
+            // 9. Theoretical Bounds Verification Hook (Post-Batch)
+            if (config.EnableTheoreticalBoundsVerification && results.Count >= 3)
+            {
+                var nValues = results.Select(r => r.InputSize).ToArray();
+                var tValues = results.Select(r => r.AvgTimeMs).ToArray();
+                var verifier = new TheoreticalBoundVerificationEngine();
+                var fits = verifier.VerifyComplexityBounds(nValues, tValues);
+                var bestFit = fits.First();
+
+                foreach (var result in results)
+                {
+                    result.ExtendedMetrics["Bounds_BestFitModel"] = bestFit.ModelName;
+                    result.ExtendedMetrics["Bounds_RSquared"] = bestFit.RSquared.ToString("F4");
+                    result.ExtendedMetrics["Bounds_Constant"] = bestFit.BestFitConstant.ToString("E4");
+                }
+            }
+
             return results;
+        }
+
+        public PhaseTransitionResult RunPhaseTransitionSweep(IAlgorithm algorithm, BenchmarkConfig config)
+        {
+            if (!config.EnablePhaseTransitionDetector) return new PhaseTransitionResult();
+            var detector = new AlgorithmicPhaseTransitionDetector(_inputGenerator);
+            return detector.DetectPhaseTransition(algorithm, config, config.PhaseTransitionSweepStart, config.PhaseTransitionSweepEnd, config.PhaseTransitionSteps, config.PhaseTransitionSweepParameter);
+        }
+
+        public List<DragRaceResult> RunDragRace(List<IAlgorithm> algorithms, BenchmarkConfig config, CancellationToken token)
+        {
+            if (!config.EnableDragRaceMode || algorithms.Count < 2) return new List<DragRaceResult>();
+
+            // Generate shared dataset
+            var masterInput = _inputGenerator.GenerateInput(config, algorithms[0].Category, "DragRace");
+            
+            var orchestrator = new DragRaceOrchestrator();
+            return orchestrator.RunDragRace(algorithms, masterInput);
         }
 
         private BenchmarkResult? RunSingle(IAlgorithm algorithm, BenchmarkConfig config, string batchId, CancellationToken token)
         {
-            var masterInput = _inputGenerator.GenerateInput(config, algorithm.Category);
+            var masterInput = _inputGenerator.GenerateInput(config, algorithm.Category, algorithm.Name);
+
+            // Research-Grade Extensions Initialization
+            var extendedMetrics = new Dictionary<string, string>();
+
+            // 1. Thread Scaling (Amdahl) Hook
+            if (config.EnableThreadScalingAnalysis)
+            {
+                var amdahl = new AmdahlAnalyzer();
+                var threadScaling = amdahl.AnalyzeScaling(algorithm, masterInput, config.MaxThreadsForScaling);
+                extendedMetrics["Amdahl_Efficiency_Max"] = threadScaling.Last().Efficiency.ToString("F4");
+                extendedMetrics["Amdahl_Speedup_Max"] = threadScaling.Last().Speedup.ToString("F4");
+                extendedMetrics["Amdahl_SerialFraction"] = threadScaling.Last().EstimatedSerialFraction.ToString("F4");
+            }
+
+            // 2. JIT Warmup Profiler Hook
+            if (config.EnableJitWarmupProfiler)
+            {
+                var jitProfiler = new JitWarmupProfiler();
+                var jitResults = jitProfiler.ProfileJitWarmup(algorithm, masterInput, config.JitIterations, config.JitForceGc);
+                var inflection = jitResults.FirstOrDefault(r => r.IsWarmupInflectionPoint);
+                if (inflection != null)
+                {
+                    extendedMetrics["JIT_Inflection_Iteration"] = inflection.Iteration.ToString();
+                    extendedMetrics["JIT_Inflection_TimeMs"] = inflection.ExecutionTimeMs.ToString("F4");
+                }
+            }
+
+            // 11. GC Topology Profiler Hook
+            if (config.EnableGcTopologyProfiler)
+            {
+                var gcResult = GcTopologyProfiler.ProfileExecution(algorithm, masterInput);
+                extendedMetrics["GC_TotalAllocated"] = gcResult.TotalAllocatedBytes.ToString();
+                extendedMetrics["GC_Gen0"] = gcResult.Gen0Collections.ToString();
+                extendedMetrics["GC_Gen1"] = gcResult.Gen1Collections.ToString();
+                extendedMetrics["GC_Gen2"] = gcResult.Gen2Collections.ToString();
+                extendedMetrics["GC_PressureScore"] = gcResult.GcPressureScore.ToString("F4");
+            }
 
             // 1. Warmup
             try 
@@ -104,7 +156,30 @@ namespace AlgorithmBenchmarker.Services
                 long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
                 Stopwatch sw = Stopwatch.StartNew();
 
+                // 3. Micro-Operation Tracer Hook
+                if (config.EnableMicroTracer) ExecutionTracer.StartTracing();
+                // 8. Cache Locality Hook
+                if (config.EnableCacheLocalityAnalyzer && i == 0) { CacheLocalityAnalyzer.CacheLineSizeBytes = config.CacheLineSizeBytes; CacheLocalityAnalyzer.StartTracking(); }
+
                 algorithm.Execute(input);
+
+                if (config.EnableCacheLocalityAnalyzer && i == 0)
+                {
+                    var cacheResult = CacheLocalityAnalyzer.StopAndAnalyze();
+                    extendedMetrics["Cache_LocalityScore"] = cacheResult.LocalityScore.ToString("F4");
+                    extendedMetrics["Cache_MissProbability"] = cacheResult.EstimatedCacheMissProbability.ToString("F4");
+                }
+                if (config.EnableMicroTracer)
+                {
+                    ExecutionTracer.StopTracing();
+                    if (i == 0) // Only record trace metrics of the first rep to avoid duplicating identical deterministic outputs
+                    {
+                        var trace = ExecutionTracer.GetTrace();
+                        extendedMetrics["MicroTracer_TotalOps"] = trace.Count.ToString();
+                        extendedMetrics["MicroTracer_Comparisons"] = trace.Count(x => x.Type == OperationType.Comparison).ToString();
+                        extendedMetrics["MicroTracer_Swaps"] = trace.Count(x => x.Type == OperationType.Swap).ToString();
+                    }
+                }
 
                 sw.Stop();
                 long afterBytes = GC.GetAllocatedBytesForCurrentThread();
@@ -120,6 +195,18 @@ namespace AlgorithmBenchmarker.Services
             double maxTime = executionTimes.Max();
             double stdDev = CalculateStdDev(executionTimes, avgTime);
 
+            long avgAllocated = config.Repetitions > 0 ? totalAllocated / config.Repetitions : 0;
+
+            // 7. Energy Estimator Hook
+            if (config.EnableEnergyEstimator)
+            {
+                var estimator = new EnergyEstimator();
+                long totalOps = extendedMetrics.ContainsKey("MicroTracer_TotalOps") ? long.Parse(extendedMetrics["MicroTracer_TotalOps"]) : 0;
+                var energy = estimator.EstimateFromTimeAndMemory(avgTime, avgAllocated, (int)totalOps);
+                extendedMetrics["Energy_ModeledJoules"] = energy.EstimatedJoules.ToString("E4");
+                extendedMetrics["Energy_ModeledCarbonGrams"] = energy.EstimatedCarbonGrams.ToString("E4");
+            }
+
             return new BenchmarkResult
             {
                 BatchId = batchId,
@@ -130,8 +217,9 @@ namespace AlgorithmBenchmarker.Services
                 MinTimeMs = minTime,
                 MaxTimeMs = maxTime,
                 StdDevTimeMs = stdDev,
-                AllocatedBytes = totalAllocated / config.Repetitions,
-                MemoryBytes = totalAllocated / config.Repetitions, // Mapping to old field too just in case
+                AllocatedBytes = avgAllocated,
+                MemoryBytes = avgAllocated, // Mapping to old field too just in case
+                ExtendedMetrics = extendedMetrics,
                 Timestamp = DateTime.Now
             };
         }

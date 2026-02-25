@@ -9,11 +9,26 @@ namespace AlgorithmBenchmarker.Services
     public class InputGenerator
     {
         private Random _random = new Random();
+        private readonly Services.Adversarial.AdversarialEngine _adversarialEngine;
 
-        public object GenerateInput(BenchmarkConfig config, string algorithmCategory)
+        public InputGenerator()
+        {
+            _adversarialEngine = new Services.Adversarial.AdversarialEngine();
+        }
+
+        public object GenerateInput(BenchmarkConfig config, string algorithmCategory, string algorithmName = "")
         {
             // 1. Set Context for algorithms that need detailed settings (e.g. Encryption Mode)
             BenchmarkContext.Current = config;
+
+            // 1.5 Adversarial Intercept
+            if (config.UseAdversarialInput && !string.IsNullOrEmpty(algorithmName))
+            {
+                if (_adversarialEngine.HasAdversarialGenerator(algorithmName))
+                {
+                    return _adversarialEngine.Generate(algorithmName, config.InputSize, 42); // deterministic seed 42
+                }
+            }
 
             // 2. Routing / Graph
             if (algorithmCategory == "Graph" || algorithmCategory == "Routing")

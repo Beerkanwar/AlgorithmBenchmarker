@@ -90,10 +90,10 @@ namespace AlgorithmBenchmarker.Algorithms.Compression
 
         private class HuffmanNode
         {
-            public object Symbol;
+            public object Symbol = default!;
             public int Frequency;
-            public HuffmanNode Left;
-            public HuffmanNode Right;
+            public HuffmanNode? Left;
+            public HuffmanNode? Right;
         }
     }
 }

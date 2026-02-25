@@ -13,14 +13,14 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
         {
             if (input is IndexingInputData data)
             {
-                TreeNode root = null;
+                TreeNode? root = null;
                 // Build
                 foreach (var val in data.Dataset) root = Insert(root, val);
 
                 // Query
                 foreach (var query in data.SearchQueries)
                 {
-                    bool found = Search(root, query);
+                    bool _ = Search(root, query);
                 }
             }
         }
@@ -28,11 +28,11 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
         private class TreeNode
         {
             public int val;
-            public TreeNode left, right;
+            public TreeNode? left, right;
             public TreeNode(int val) { this.val = val; }
         }
 
-        private TreeNode Insert(TreeNode root, int val)
+        private TreeNode Insert(TreeNode? root, int val)
         {
             if (root == null) return new TreeNode(val);
             if (val < root.val) root.left = Insert(root.left, val);
@@ -40,7 +40,7 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
             return root;
         }
 
-        private bool Search(TreeNode root, int val)
+        private bool Search(TreeNode? root, int val)
         {
             if (root == null) return false;
             if (root.val == val) return true;

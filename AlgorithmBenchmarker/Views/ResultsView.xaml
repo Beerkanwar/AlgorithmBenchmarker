@@ -74,6 +74,7 @@
                     <DataGridTextColumn Header="Max (ms)" Binding="{Binding MaxTimeMs, StringFormat=N4}"/>
                     <DataGridTextColumn Header="StdDev" Binding="{Binding StdDevTimeMs, StringFormat=N4}"/>
                     <DataGridTextColumn Header="Allocated (Bytes)" Binding="{Binding AllocatedBytes, StringFormat=N0}" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Extended Metrics (Energy, Cache, JIT, etc.)" Binding="{Binding ExtendedMetricsDisplay}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Expander>

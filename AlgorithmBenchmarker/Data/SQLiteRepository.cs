@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using AlgorithmBenchmarker.Models;
 using System.IO;
+using System.Text.Json;
 
 namespace AlgorithmBenchmarker.Data
 {
@@ -52,6 +53,7 @@ namespace AlgorithmBenchmarker.Data
                 AddColumnIfNotExists(connection, "MaxTimeMs", "REAL DEFAULT 0");
                 AddColumnIfNotExists(connection, "StdDevTimeMs", "REAL DEFAULT 0");
                 AddColumnIfNotExists(connection, "AllocatedBytes", "INTEGER DEFAULT 0");
+                AddColumnIfNotExists(connection, "ExtendedMetrics", "TEXT DEFAULT '{}'");
             }
         }
 
@@ -73,8 +75,8 @@ namespace AlgorithmBenchmarker.Data
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText = @"
-                    INSERT INTO Results (BatchId, AlgorithmName, Category, InputSize, AvgTimeMs, MinTimeMs, MaxTimeMs, StdDevTimeMs, AllocatedBytes, MemoryBytes, Timestamp)
-                    VALUES ($batch, $name, $cat, $size, $time, $min, $max, $std, $alloc, $mem, $date);
+                    INSERT INTO Results (BatchId, AlgorithmName, Category, InputSize, AvgTimeMs, MinTimeMs, MaxTimeMs, StdDevTimeMs, AllocatedBytes, MemoryBytes, Timestamp, ExtendedMetrics)
+                    VALUES ($batch, $name, $cat, $size, $time, $min, $max, $std, $alloc, $mem, $date, $extended);
                 ";
                 command.Parameters.AddWithValue("$batch", result.BatchId ?? "");
                 command.Parameters.AddWithValue("$name", result.AlgorithmName);
@@ -87,6 +89,8 @@ namespace AlgorithmBenchmarker.Data
                 command.Parameters.AddWithValue("$alloc", result.AllocatedBytes);
                 command.Parameters.AddWithValue("$mem", result.MemoryBytes);
                 command.Parameters.AddWithValue("$date", result.Timestamp.ToString("o"));
+                string jsonMetrics = JsonSerializer.Serialize(result.ExtendedMetrics ?? new Dictionary<string, string>());
+                command.Parameters.AddWithValue("$extended", jsonMetrics);
 
                 command.ExecuteNonQuery();
             }
@@ -135,6 +139,14 @@ namespace AlgorithmBenchmarker.Data
 
                         int allocIdx = reader.GetOrdinal("AllocatedBytes");
                         result.AllocatedBytes = reader.IsDBNull(allocIdx) ? 0 : reader.GetInt64(allocIdx);
+
+                        try
+                        {
+                            int extIdx = reader.GetOrdinal("ExtendedMetrics");
+                            string extJson = reader.IsDBNull(extIdx) ? "{}" : reader.GetString(extIdx);
+                            result.ExtendedMetrics = JsonSerializer.Deserialize<Dictionary<string, string>>(extJson) ?? new Dictionary<string, string>();
+                        }
+                        catch { result.ExtendedMetrics = new Dictionary<string, string>(); }
 
                         results.Add(result);
                     }

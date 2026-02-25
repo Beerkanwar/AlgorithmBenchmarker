@@ -23,6 +23,19 @@ This educational and practical tool allows developers and students to measure th
 - **Light/Dark Mode UI:** Modern user interface with toggleable themes for accessibility and preference.
 - **Extensibility:** Easily drop in new algorithms by implementing a single interface without touching the core UI code or benchmarker engine.
 
+### Advanced Research-Grade Profiling Engine
+- **Adversarial Input Synthesizer:** Deterministic generation of worst-case pathological inputs to force algorithms into upper bound states `O(W)`.
+- **Micro-Operation Execution Tracer:** Low-overhead `[ThreadStatic]` instruction counting for precise algorithmic step analysis.
+- **Concurrency & Thread Scaling Profiler (Amdahl Analyzer):** Evaluate parallel efficiency identifying serial execution fractions via synchronized barriers.
+- **Dynamic Data-Structure Swapping:** Inject modular generic underlying structures (e.g. Fib/Binary/Pairing Heaps) and test logic isolation.
+- **JIT & Tiered Compilation Profiler:** Map Cold-start vs Warm execution inflection points iteratively.
+- **Algorithmic Drag Race Mode:** Execute algorithms concurrently on cloned input states guaranteeing completely matched launch epochs minus GC variance.
+- **Energy Estimator:** Hardware-agnostic mathematical derivation models projecting equivalent CPU usage into Joules & CO2e output estimates.
+- **Cache Locality Analyzer:** Determine sub-algorithm Cache-Line crossing frequency, abstract cache miss probability, and generic data stride locality mathematically mapping cache coherency without OS-level profiling.
+- **Theoretical Bound Verification Engine:** Robust R² least-squares regression validation analyzing empirical output matrices against bounded $O(N \log N)$, $O(N^2)$, etc., verifying complexity guarantees.
+- **Algorithmic Phase Transition Detector:** High-resolution sweep execution hunting dataset constraint shifts representing emergent gradient discontinuities (exponential transitions).
+- **Managed Runtime GC Topology Profiler:** Track implicit generation-level garbage collection pausing translating allocation sizes into overarching distortion heuristics.
+
 ## Tech Stack
 
 - **Language:** C# 12

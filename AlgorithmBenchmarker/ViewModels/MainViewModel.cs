@@ -46,6 +46,14 @@ namespace AlgorithmBenchmarker.ViewModels
 
             UpdateAlgorithms();
             
+            ExecutionModes = new ObservableCollection<string> 
+            { 
+                "Standard Batch Profiler", 
+                "Drag Race Mode", 
+                "Phase Transition Sweeper" 
+            };
+            _selectedExecutionMode = ExecutionModes.First();
+
             RunBenchmarkCommand = new AsyncRelayCommand(RunBenchmarkAsync, () => !IsBusy);
             CancelBenchmarkCommand = new RelayCommand(CancelBenchmark, () => IsBusy);
             ViewResultsCommand = new RelayCommand(ExecuteViewResults);
@@ -63,6 +71,15 @@ namespace AlgorithmBenchmarker.ViewModels
                 SetProperty(ref _selectedCategory, value);
                 UpdateAlgorithms();
             }
+        }
+
+        public ObservableCollection<string> ExecutionModes { get; }
+
+        private string _selectedExecutionMode;
+        public string SelectedExecutionMode
+        {
+            get => _selectedExecutionMode;
+            set => SetProperty(ref _selectedExecutionMode, value);
         }
 
         private ObservableCollection<IAlgorithm> _algorithms;
@@ -85,7 +102,7 @@ namespace AlgorithmBenchmarker.ViewModels
             }
         }
 
-        private BenchmarkConfig _config;
+        private BenchmarkConfig _config = new BenchmarkConfig();
         public BenchmarkConfig Config
         {
             get => _config;
@@ -202,23 +219,50 @@ namespace AlgorithmBenchmarker.ViewModels
 
             try
             {
-                // Run Batch
-                var results = await Task.Run(() => _runner.RunBatch(SelectedAlgorithm, Config, _cts.Token, progress));
-
-                if (_cts.Token.IsCancellationRequested)
+                if (SelectedExecutionMode == "Drag Race Mode")
                 {
-                    StatusMessage = "Benchmark Cancelled.";
+                    Config.EnableDragRaceMode = true;
+                    var dragResults = await Task.Run(() => _runner.RunDragRace(Algorithms.ToList(), Config, _cts.Token));
+                    if (!_cts.Token.IsCancellationRequested && dragResults.Any())
+                    {
+                        var msg = "Drag Race Results:\n\n";
+                        foreach(var r in dragResults)
+                            msg += $"Rank {r.Rank}: {r.AlgorithmName} ({r.ExecutionTimeMs:F4} ms | {r.AllocatedBytes:N0} bytes)\n";
+                        System.Windows.MessageBox.Show(msg, "Drag Race Complete", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        StatusMessage = "Drag Race Complete.";
+                    }
+                }
+                else if (SelectedExecutionMode == "Phase Transition Sweeper")
+                {
+                    Config.EnablePhaseTransitionDetector = true;
+                    var sweepResult = await Task.Run(() => _runner.RunPhaseTransitionSweep(SelectedAlgorithm, Config));
+                    if (!_cts.Token.IsCancellationRequested)
+                    {
+                        var msg = $"Phase Transition Sweep Complete\n\nAlgorithm: {SelectedAlgorithm.Name}\nSweep Parameter: {Config.PhaseTransitionSweepParameter}\nCritical Parameter Detected (Exponent Inflection): {sweepResult.CriticalParameter:F4}\nMax Slope Delta: {sweepResult.MaxSlopeDelta:F4}";
+                        System.Windows.MessageBox.Show(msg, "Phase Transition Detected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        StatusMessage = "Phase Transition Sweep Complete.";
+                    }
                 }
                 else
                 {
-                    // Save All
-                    foreach (var r in results) _repository.SaveResult(r);
-                    
-                    StatusMessage = "Benchmark Complete! Click below to view results.";
-                    IsResultReady = true;
+                    // Run Standard Batch
+                    var results = await Task.Run(() => _runner.RunBatch(SelectedAlgorithm, Config, _cts.Token, progress));
 
-                    // Refresh Results
-                    _resultsViewModel.LoadResults();
+                    if (_cts.Token.IsCancellationRequested)
+                    {
+                        StatusMessage = "Benchmark Cancelled.";
+                    }
+                    else
+                    {
+                        // Save All
+                        foreach (var r in results) _repository.SaveResult(r);
+                        
+                        StatusMessage = "Benchmark Complete! Click below to view results.";
+                        IsResultReady = true;
+
+                        // Refresh Results
+                        _resultsViewModel.LoadResults();
+                    }
                 }
             }
             catch (Exception ex)
