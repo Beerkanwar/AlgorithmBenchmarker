@@ -15,6 +15,8 @@ namespace AlgorithmBenchmarker.Algorithms.Routing
         public string Category => "Routing";
         public string Complexity => "O(E + V log V)";
 
+        public override string ToString() => Name;
+
         public void Execute(object input)
         {
             if (input is GraphData graph)

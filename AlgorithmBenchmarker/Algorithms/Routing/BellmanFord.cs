@@ -10,7 +10,7 @@ namespace AlgorithmBenchmarker.Algorithms.Routing
         public string Name => "Bellman-Ford Routing";
         public string Category => "Routing";
         public string Complexity => "O(VE)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is EnhancedGraphData graph)

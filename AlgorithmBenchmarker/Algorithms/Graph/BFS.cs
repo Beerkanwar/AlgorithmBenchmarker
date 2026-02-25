@@ -30,6 +30,8 @@ namespace AlgorithmBenchmarker.Algorithms.Graph
         public string Category => "Graph";
         public string Complexity => "O(V + E)";
 
+        public override string ToString() => Name;
+
         public void Execute(object input)
         {
             if (input is GraphData graph)

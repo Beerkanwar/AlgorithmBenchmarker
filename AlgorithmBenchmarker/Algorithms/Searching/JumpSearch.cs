@@ -7,7 +7,7 @@ namespace AlgorithmBenchmarker.Algorithms.Searching
         public string Name => "Jump Search";
         public string Category => "Searching";
         public string Complexity => "O(√N)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is int[] arr && arr.Length > 0)

@@ -9,7 +9,7 @@ namespace AlgorithmBenchmarker.Algorithms.Encryption
         public string Name => "SHA256 Hash";
         public string Category => "Encryption";
         public string Complexity => "O(N)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is int size)

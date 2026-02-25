@@ -8,6 +8,8 @@ namespace AlgorithmBenchmarker.Algorithms.Searching
         public string Category => "Searching";
         public string Complexity => "O(log N)";
 
+        public override string ToString() => Name;
+
         public void Execute(object input)
         {
             // Assuming input is the array, and we search for the item at index Length/2

@@ -11,7 +11,7 @@ namespace AlgorithmBenchmarker.Algorithms.Routing
         public string Name => "A* Pathfinding";
         public string Category => "Routing";
         public string Complexity => "O(E)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is EnhancedGraphData graph)

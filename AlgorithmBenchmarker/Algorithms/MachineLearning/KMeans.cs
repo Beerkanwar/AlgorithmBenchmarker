@@ -8,7 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.MachineLearning
         public string Name => "K-Means Clustering";
         public string Category => "Machine Learning";
         public string Complexity => "O(N*K*Epochs)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is MLInputData data)

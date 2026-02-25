@@ -8,7 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.MachineLearning
         public string Name => "Linear Regression Training";
         public string Category => "Machine Learning";
         public string Complexity => "O(N*D*Epochs)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is MLInputData data)

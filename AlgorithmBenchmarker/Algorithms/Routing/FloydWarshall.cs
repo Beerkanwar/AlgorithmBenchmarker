@@ -9,7 +9,7 @@ namespace AlgorithmBenchmarker.Algorithms.Routing
         public string Name => "Floyd-Warshall Routing";
         public string Category => "Routing";
         public string Complexity => "O(V^3)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is EnhancedGraphData graph)

@@ -9,7 +9,7 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
         public string Name => "Hash Table Lookup";
         public string Category => "Indexing";
         public string Complexity => "O(1) Avg";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is IndexingInputData data)
