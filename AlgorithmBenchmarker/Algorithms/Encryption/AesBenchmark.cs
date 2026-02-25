@@ -10,6 +10,8 @@ namespace AlgorithmBenchmarker.Algorithms.Encryption
         public string Category => "Encryption";
         public string Complexity => "O(N)";
 
+        public override string ToString() => Name;
+
         public void Execute(object input)
         {
             // Input should be a byte array ideally, keeping it simple with string input generated

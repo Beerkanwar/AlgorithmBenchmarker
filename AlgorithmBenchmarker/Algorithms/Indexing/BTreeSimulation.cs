@@ -9,7 +9,7 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
         public string Name => "B-Tree Simulation";
         public string Category => "Indexing";
         public string Complexity => "O(log N)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is IndexingInputData data)

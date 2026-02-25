@@ -5,8 +5,8 @@ namespace AlgorithmBenchmarker.Algorithms.Sorting
          public string Name => "Heap Sort";
          public string Category => "Sorting";
          public string Complexity => "O(N log N)";
-
-         public void Execute(object input)
+        public override string ToString() => Name;
+        public void Execute(object input)
          {
              if (input is int[] arr)
              {

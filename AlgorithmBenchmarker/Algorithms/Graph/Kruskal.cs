@@ -11,7 +11,7 @@ namespace AlgorithmBenchmarker.Algorithms.Graph
         public string Name => "Kruskal's MST";
         public string Category => "Graph";
         public string Complexity => "O(E log E)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is EnhancedGraphData graph)

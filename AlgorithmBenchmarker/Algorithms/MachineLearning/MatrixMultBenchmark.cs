@@ -7,7 +7,7 @@ namespace AlgorithmBenchmarker.Algorithms.MachineLearning
         public string Name => "Matrix Multiplication";
         public string Category => "ML Optimization";
         public string Complexity => "O(N^3)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             // InputSize N -> NxN matrix

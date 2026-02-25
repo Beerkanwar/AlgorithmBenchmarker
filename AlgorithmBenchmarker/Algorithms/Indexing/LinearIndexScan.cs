@@ -8,7 +8,7 @@ namespace AlgorithmBenchmarker.Algorithms.Indexing
         public string Name => "Linear Index Scan";
         public string Category => "Indexing";
         public string Complexity => "O(N)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is IndexingInputData data)

@@ -6,6 +6,8 @@ namespace AlgorithmBenchmarker.Algorithms.Sorting
         public string Category => "Sorting";
         public string Complexity => "O(N^2)";
 
+        public override string ToString() => Name;  // Add this line
+
         public void Execute(object input)
         {
             if (input is int[] array)

@@ -7,7 +7,7 @@ namespace AlgorithmBenchmarker.Algorithms.DynamicProgramming
         public string Name => "Coin Change Problem";
         public string Category => "Dynamic Programming";
         public string Complexity => "O(N*Target)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is int n)

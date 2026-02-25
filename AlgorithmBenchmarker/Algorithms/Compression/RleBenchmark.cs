@@ -9,7 +9,7 @@ namespace AlgorithmBenchmarker.Algorithms.Compression
         public string Name => "Run-Length Encoding (RLE)";
         public string Category => "Compression";
         public string Complexity => "O(N)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is string[] sArr)

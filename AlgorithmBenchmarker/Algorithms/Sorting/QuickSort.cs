@@ -6,6 +6,8 @@ namespace AlgorithmBenchmarker.Algorithms.Sorting
         public string Category => "Sorting";
         public string Complexity => "O(N log N)";
 
+        public override string ToString() => Name;
+
         public void Execute(object input)
         {
             if (input is int[] array)

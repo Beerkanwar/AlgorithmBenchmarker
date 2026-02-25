@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:AlgorithmBenchmarker.Views"
         mc:Ignorable="d"
         Title="Algorithm Benchmarker" Height="700" Width="1000"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid>
         <TabControl Margin="5" x:Name="MainTabControl" Background="Transparent" BorderThickness="0">
             <TabItem Header="Run Benchmark">

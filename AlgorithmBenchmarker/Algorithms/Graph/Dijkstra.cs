@@ -11,7 +11,7 @@ namespace AlgorithmBenchmarker.Algorithms.Graph
         public string Name => "Dijkstra Shortest Path";
         public string Category => "Graph"; // Or Routing? Prompt says Add to Graph: Dijkstra.
         public string Complexity => "O(E log V)";
-
+        public override string ToString() => Name;
         public void Execute(object input)
         {
             if (input is EnhancedGraphData graph)
