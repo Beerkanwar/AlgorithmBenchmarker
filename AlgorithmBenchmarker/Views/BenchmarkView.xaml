@@ -27,6 +27,12 @@
                     <!-- Algorithm Selection -->
                     <GroupBox Header="Algorithm Selection" Margin="0,0,10,20" Padding="15">
                         <StackPanel Margin="5">
+                            <TextBlock Text="Execution Mode" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding ExecutionModes}" 
+                                      SelectedItem="{Binding SelectedExecutionMode}" 
+                                      IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanInverseConverter}}"
+                                      Margin="0,0,0,20"/>
+                                      
                             <TextBlock Text="Category" Margin="0,0,0,8" FontWeight="SemiBold"/>
                             <ComboBox ItemsSource="{Binding Categories}" 
                                       SelectedItem="{Binding SelectedCategory}" 
@@ -249,6 +255,21 @@
                              </Grid>
                         </StackPanel>
                      </StackPanel>
+                </GroupBox>
+
+                <!-- Advanced Research Profilers -->
+                <GroupBox Header="Advanced Research &amp; Profiling Engines" Margin="0,0,0,25" Padding="15">
+                     <WrapPanel Orientation="Horizontal" Margin="5">
+                         <CheckBox Content="Adversarial Input Generator" IsChecked="{Binding Config.UseAdversarialInput}" ToolTip="Force worst-case pathological O(W) inputs." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Micro-Operation Tracer" IsChecked="{Binding Config.EnableMicroTracer}" ToolTip="Count exact instructions overriding system clock." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Amdahl Concurrency Profiler" IsChecked="{Binding Config.EnableThreadScalingAnalysis}" ToolTip="Simulate threads to find serial fraction." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Dynamic Container Swapping" IsChecked="{Binding Config.EnableContainerSwapping}" ToolTip="Test underlying generic structures." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="JIT Warmup Profiler" IsChecked="{Binding Config.EnableJitWarmupProfiler}" ToolTip="Track Tiered Compilation inflection." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="GC Topology Profiler" IsChecked="{Binding Config.EnableGcTopologyProfiler}" ToolTip="Measure Gen 0/1/2 Garbage Collection pauses." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Energy &amp; Carbon Estimator" IsChecked="{Binding Config.EnableEnergyEstimator}" ToolTip="Estimate Joules and CO2e emissions." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Cache Locality Analyzer" IsChecked="{Binding Config.EnableCacheLocalityAnalyzer}" ToolTip="Measure cache coherency and stride variance." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                         <CheckBox Content="Theoretical Complexity Verifier" IsChecked="{Binding Config.EnableTheoreticalBoundsVerification}" ToolTip="Perform R² regression for O(N) constraints." Margin="0,0,20,10" FontWeight="SemiBold"/>
+                     </WrapPanel>
                 </GroupBox>
 
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,10,0,0">

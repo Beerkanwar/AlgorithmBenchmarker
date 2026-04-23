@@ -61,5 +61,57 @@ namespace AlgorithmBenchmarker.Models
 
         // Routing
         public string CostMetric { get; set; } = "Distance";
+
+        // --- Advanced Research-Grade Toggles ---
+        
+        // 1. Adversarial Input
+        public bool UseAdversarialInput { get; set; } = false;
+        public string AdversarialStrategy { get; set; } = "Strictly Increasing";
+
+        // 2. Micro-Operation Tracer
+        public bool EnableMicroTracer { get; set; } = false;
+
+        // 3. Thread Scaling (Amdahl)
+        public bool EnableThreadScalingAnalysis { get; set; } = false;
+        public int MaxThreadsForScaling { get; set; } = Environment.ProcessorCount;
+
+        // 4. Container Swapping
+        public bool EnableContainerSwapping { get; set; } = false;
+        public string InjectedContainerType { get; set; } = "Array"; // BinaryHeap, PairingHeap, FibonacciHeap
+        
+        // 5. JIT Warmup Profiler
+        public bool EnableJitWarmupProfiler { get; set; } = false;
+        public int JitIterations { get; set; } = 100;
+        public bool JitForceGc { get; set; } = false;
+
+        // 6. Drag Race Mode
+        public bool EnableDragRaceMode { get; set; } = false;
+
+        // --- Phase 2: Advanced Research-Grade Toggles ---
+
+        // 7. Energy Estimator
+        public bool EnableEnergyEstimator { get; set; } = false;
+
+        // 8. Cache Locality Analyzer
+        public bool EnableCacheLocalityAnalyzer { get; set; } = false;
+        public int CacheLineSizeBytes { get; set; } = 64;
+
+        // 9. Theoretical Bounds Verification
+        public bool EnableTheoreticalBoundsVerification { get; set; } = false;
+
+        // 10. Phase Transition Detector
+        public bool EnablePhaseTransitionDetector { get; set; } = false;
+        public string PhaseTransitionSweepParameter { get; set; } = "Density"; // or KeySize, Constraint, etc.
+        public double PhaseTransitionSweepStart { get; set; } = 0.1;
+        public double PhaseTransitionSweepEnd { get; set; } = 1.0;
+        public int PhaseTransitionSteps { get; set; } = 10;
+
+        // 11. GC Topology Profiler
+        public bool EnableGcTopologyProfiler { get; set; } = false;
+
+        public BenchmarkConfig Clone()
+        {
+            return (BenchmarkConfig)this.MemberwiseClone();
+        }
     }
 }

@@ -7,7 +7,7 @@ namespace AlgorithmBenchmarker.Models
     {
         private static AsyncLocal<BenchmarkConfig> _currentConfig = new AsyncLocal<BenchmarkConfig>();
 
-        public static BenchmarkConfig Current
+        public static BenchmarkConfig? Current
         {
             get => _currentConfig.Value;
             set => _currentConfig.Value = value;
